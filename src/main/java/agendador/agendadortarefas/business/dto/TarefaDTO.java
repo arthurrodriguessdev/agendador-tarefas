@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 public class TarefaDTO {
     private String nomeTarefa;
     private String descricaoTarefa;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime dataCriacao;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss") // Permite enviar como string e converte
     private LocalDateTime dataEvento;
