@@ -2,6 +2,7 @@ package agendador.agendadortarefas.business;
 
 import agendador.agendadortarefas.business.dto.TarefaDTO;
 import agendador.agendadortarefas.business.mapper.TarefaMapper;
+import agendador.agendadortarefas.business.mapper.TarefaUpdateMapper;
 import agendador.agendadortarefas.exception.ResourceNotFound;
 import agendador.agendadortarefas.infraestructure.entity.Tarefa;
 import agendador.agendadortarefas.infraestructure.enums.StatusNotificacaoEnum;
@@ -17,6 +18,7 @@ import java.util.List;
 public class TarefaService {
     private final TarefaRepository tarefaRepository;
     private final TarefaMapper tarefaMapper;
+    private final TarefaUpdateMapper tarefaUpdateMapper;
     private final JwtUtil jwtUtil;
 
     // Retira a inicial e espaçamento do token
@@ -27,6 +29,12 @@ public class TarefaService {
         }
 
         return token;
+    }
+
+    private Tarefa getTarefaById(Long id){
+        return tarefaRepository.findById(id).orElseThrow(
+                () -> new ResourceNotFound("Tarefa não encontrada.")
+        );
     }
 
     public TarefaDTO adicionarTarefa(TarefaDTO tarefaDTO, String token){
@@ -57,5 +65,29 @@ public class TarefaService {
         }
 
         return tarefaMapper.toTarefasDTO(tarefas);
+    }
+
+    public void deletarTarefa(Long id) {
+        Tarefa tarefaDeletar = getTarefaById(id);
+        tarefaRepository.delete(tarefaDeletar);
+    }
+
+    public TarefaDTO alterarStatus(StatusNotificacaoEnum status, Long id){
+        if(status == StatusNotificacaoEnum.NOTIFICADO){
+            throw new IllegalArgumentException(
+                    "Não é permitido alterar este status manualmente. " +
+                            "Ele será atualizado automaticamente após o envio do e-mail."
+            );
+        }
+
+        Tarefa tarefa = getTarefaById(id);
+        tarefa.setStatus(status);
+        return tarefaMapper.toTarefaDTO(tarefaRepository.save(tarefa));
+    }
+
+    public TarefaDTO atualizarDadosTarefa(TarefaDTO tarefaDTO, Long id){
+        Tarefa tarefa = getTarefaById(id);
+        tarefaUpdateMapper.update(tarefaDTO, tarefa);
+        return tarefaMapper.toTarefaDTO(tarefaRepository.save(tarefa));
     }
 }
