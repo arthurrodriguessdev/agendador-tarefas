@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class TarefaDTO {
+    private Long id;
     private String nomeTarefa;
     private String descricaoTarefa;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")

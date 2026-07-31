@@ -73,12 +73,12 @@ public class TarefaService {
     }
 
     public TarefaDTO alterarStatus(StatusNotificacaoEnum status, Long id){
-        if(status == StatusNotificacaoEnum.NOTIFICADO){
-            throw new IllegalArgumentException(
-                    "Não é permitido alterar este status manualmente. " +
-                            "Ele será atualizado automaticamente após o envio do e-mail."
-            );
-        }
+//        if(status == StatusNotificacaoEnum.NOTIFICADO){
+//            throw new IllegalArgumentException(
+//                    "Não é permitido alterar este status manualmente. " +
+//                            "Ele será atualizado automaticamente após o envio do e-mail."
+//            );
+//        }
 
         Tarefa tarefa = getTarefaById(id);
         tarefa.setStatus(status);
