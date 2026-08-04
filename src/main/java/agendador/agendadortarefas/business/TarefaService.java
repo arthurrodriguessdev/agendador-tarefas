@@ -33,7 +33,7 @@ public class TarefaService {
 
     private Tarefa getTarefaById(Long id){
         return tarefaRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFound("Tarefa não encontrada.")
+                () -> new ResourceNotFound("A tarefa não existe.")
         );
     }
 
@@ -49,37 +49,18 @@ public class TarefaService {
 
     public List<TarefaDTO> buscarTarefasPorEmail(String token){
         String email = jwtUtil.extractUsername(getTokenFormatado(token));
-        List<Tarefa> tarefas = tarefaRepository.findByEmailUsuario(email);
-        if(tarefas.isEmpty()){
-            throw new ResourceNotFound(
-                    String.format("Nenhuma tarefa vinculada ao email: %s foi encontrada.", email));
-        }
-
-        return tarefaMapper.toTarefasDTO(tarefas);
+        return tarefaMapper.toTarefasDTO(tarefaRepository.findByEmailUsuario(email));
     }
 
     public List<TarefaDTO> buscarTarefasPorIntervaloDatas(LocalDateTime dataInicio, LocalDateTime dataFim){
-        List<Tarefa> tarefas = tarefaRepository.buscarTarefasPorIntervaloDatas(dataInicio, dataFim);
-        if(tarefas.isEmpty()){
-            throw new ResourceNotFound("Nenhuma tarefa foi encontrada nesse intervalo de datas.");
-        }
-
-        return tarefaMapper.toTarefasDTO(tarefas);
+        return tarefaMapper.toTarefasDTO(tarefaRepository.buscarTarefasPorIntervaloDatas(dataInicio, dataFim));
     }
 
     public void deletarTarefa(Long id) {
-        Tarefa tarefaDeletar = getTarefaById(id);
-        tarefaRepository.delete(tarefaDeletar);
+        tarefaRepository.delete(getTarefaById(id));
     }
 
     public TarefaDTO alterarStatus(StatusNotificacaoEnum status, Long id){
-//        if(status == StatusNotificacaoEnum.NOTIFICADO){
-//            throw new IllegalArgumentException(
-//                    "Não é permitido alterar este status manualmente. " +
-//                            "Ele será atualizado automaticamente após o envio do e-mail."
-//            );
-//        }
-
         Tarefa tarefa = getTarefaById(id);
         tarefa.setStatus(status);
         return tarefaMapper.toTarefaDTO(tarefaRepository.save(tarefa));
