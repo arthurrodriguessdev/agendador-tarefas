@@ -1,7 +1,7 @@
-FROM gradle:8-jdk21 as build
+FROM gradle:8-jdk21 AS build
 WORKDIR /app
 COPY . .
-run gradle build --no-daemon
+RUN gradle build --no-daemon
 
 FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /app
