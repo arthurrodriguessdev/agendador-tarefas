@@ -38,12 +38,19 @@ public class TarefaService {
     }
 
     public TarefaDTO adicionarTarefa(TarefaDTO tarefaDTO, String token){
-        tarefaDTO.setDataCriacao(LocalDateTime.now());
-        tarefaDTO.setStatus(StatusNotificacaoEnum.PENDENTE);
+        // Extrai o e-mail do usuário autenticado via token
+        String emailUsuario = jwtUtil.extractUsername(getTokenFormatado(token));
+        TarefaDTO tarefaDtoAdicionar = new TarefaDTO(
+                tarefaDTO.id(),
+                tarefaDTO.nomeTarefa(),
+                tarefaDTO.descricaoTarefa(),
+                LocalDateTime.now(),
+                tarefaDTO.dataEvento(),
+                emailUsuario,
+                StatusNotificacaoEnum.PENDENTE
+        );
 
-        // Setando o e-mail do usuário autenticado
-        tarefaDTO.setEmailUsuario(jwtUtil.extractUsername(getTokenFormatado(token)));
-        Tarefa tarefaAdicionar = tarefaMapper.toTarefa(tarefaDTO);
+        Tarefa tarefaAdicionar = tarefaMapper.toTarefa(tarefaDtoAdicionar);
         return tarefaMapper.toTarefaDTO(tarefaRepository.save(tarefaAdicionar));
     }
 
