@@ -1,15 +1,10 @@
 spring:
   application:
     name: agendador-tarefas
-
   datasource:
-#    url: jdbc:postgresql://localhost:5432/db_agendador
-#    username:
-#    password:
-    url: jdbc:postgresql://postgres:5432/db_agendador
-    username: admin
-    password: admin
-
+    url: ${SPRING_DATASOURCE_URL_AGENDADOR}
+    username: ${SPRING_DATASOURCE_USERNAME_AGENDADOR}
+    password: ${SPRING_DATASOURCE_PASSWORD_AGENDADOR}
   jpa:
     hibernate:
       ddl-auto: update
@@ -17,9 +12,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-
 server:
-  port: 8081
-
+  port: ${PORTA_AGENDADOR}
 usuario:
   url: ${USUARIO_URL:http://localhost:8080}
