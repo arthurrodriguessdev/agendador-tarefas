@@ -1,7 +1,6 @@
 package agendador.agendadortarefas.infraestructure.entity;
 
 import agendador.agendadortarefas.infraestructure.enums.StatusNotificacaoEnum;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
 

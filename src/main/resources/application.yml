@@ -16,3 +16,4 @@ server:
   port: ${PORTA_AGENDADOR}
 usuario:
   url: ${USUARIO_URL:http://localhost:8080}
+secretKey: ${SECRET_KEY_JWT}
