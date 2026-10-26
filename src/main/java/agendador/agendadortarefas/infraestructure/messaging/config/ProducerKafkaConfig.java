@@ -1,9 +1,11 @@
 package agendador.agendadortarefas.infraestructure.messaging.config;
 
 import agendador.agendadortarefas.business.dto.TarefaDTO;
+import agendador.agendadortarefas.infraestructure.messaging.TaskCreatedPublisher;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
@@ -17,23 +19,26 @@ import java.util.Map;
 
 @Configuration
 public class ProducerKafkaConfig {
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String serversConfig;
+
     @Bean
     public ProducerFactory<String, TarefaDTO> producerFactory(){
-        Map<String, Object> mapConfigs = new HashMap<>();
-        mapConfigs.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-        mapConfigs.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        mapConfigs.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer.class);
-        return new DefaultKafkaProducerFactory<>(mapConfigs);
+        Map<String, Object> producerConfigs = new HashMap<>();
+        producerConfigs.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, serversConfig);
+        producerConfigs.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        producerConfigs.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer.class);
+        return new DefaultKafkaProducerFactory<>(producerConfigs);
     }
 
     @Bean
-    public KafkaTemplate<String, TarefaDTO> kafkaTemplate(){
+    public KafkaTemplate<String, TarefaDTO> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 
     @Bean
     public NewTopic tarefaCriadaTopic(){
-        return TopicBuilder.name("tarefa-criada")
+        return TopicBuilder.name(TaskCreatedPublisher.TASK_CREATED_TOPIC)
                 .partitions(1)
                 .replicas(1)
                 .build();

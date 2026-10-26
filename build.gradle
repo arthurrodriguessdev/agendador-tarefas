@@ -60,6 +60,9 @@ sonarqube {
 	properties {
 		property "sonar.projectKey", "usuario"
 		property "sonar.host.url", "http://localhost:9000"
-		property "sonar.login", "sqa_88bcd17c7b6aef08daa3222a5f6d043261146819"
 	}
+}
+
+tasks.named('bootJar') {
+	archiveFileName = 'app.jar'
 }

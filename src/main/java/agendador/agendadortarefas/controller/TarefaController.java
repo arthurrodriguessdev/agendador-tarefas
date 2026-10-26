@@ -3,11 +3,11 @@ package agendador.agendadortarefas.controller;
 import agendador.agendadortarefas.business.TarefaService;
 import agendador.agendadortarefas.business.dto.TarefaDTO;
 import agendador.agendadortarefas.infraestructure.enums.StatusNotificacaoEnum;
+import agendador.agendadortarefas.infraestructure.messaging.TaskCreatedPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -18,13 +18,13 @@ import java.util.List;
 @RequestMapping("/tarefas")
 public class TarefaController {
     private final TarefaService tarefaService;
-    private final KafkaTemplate<String, TarefaDTO> kafkaTemplate;
+    private final TaskCreatedPublisher taskCreatedPublisher;
 
     @PostMapping
     public ResponseEntity<TarefaDTO> adicionarTarefa(@RequestBody TarefaDTO tarefaDTO,
                                                      @RequestHeader("Authorization") String token){
         TarefaDTO response = tarefaService.adicionarTarefa(tarefaDTO, token);
-        kafkaTemplate.send("tarefa-criada", response);
+        taskCreatedPublisher.publish(response);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -38,27 +38,33 @@ public class TarefaController {
     @GetMapping("/eventos")
     public ResponseEntity<List<TarefaDTO>> buscarTarefasPorIntervaloDatas(
             @RequestParam("dataInicio") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
-            @RequestParam("dataFim") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim){
+            @RequestParam("dataFim") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim,
+            @RequestHeader("Authorization") String token){
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(tarefaService.buscarTarefasPorIntervaloDatas(dataInicio, dataFim));
+                .body(tarefaService.buscarTarefasPorIntervaloDatas(dataInicio, dataFim, token));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarTarefa(@PathVariable Long id){
-        tarefaService.deletarTarefa(id);
+    public ResponseEntity<Void> deletarTarefa(@PathVariable Long id,
+                                               @RequestHeader("Authorization") String token){
+        tarefaService.deletarTarefa(id, token);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<TarefaDTO> atualizarDadosTarefa(@RequestBody TarefaDTO tarefaDTO,
-                                                          @PathVariable Long id){
-        return ResponseEntity.status(HttpStatus.OK).body(tarefaService.atualizarDadosTarefa(tarefaDTO, id));
+                                                          @PathVariable Long id,
+                                                          @RequestHeader("Authorization") String token){
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(tarefaService.atualizarDadosTarefa(tarefaDTO, id, token));
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<TarefaDTO> atualizarStatusTarefa(@RequestParam("status") StatusNotificacaoEnum status,
-                                                           @PathVariable Long id){
-        return ResponseEntity.status(HttpStatus.OK).body(tarefaService.alterarStatus(status, id));
+                                                           @PathVariable Long id,
+                                                           @RequestHeader("Authorization") String token){
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(tarefaService.alterarStatus(status, id, token));
     }
 }

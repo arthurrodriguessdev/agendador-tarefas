@@ -31,40 +31,47 @@ public class TarefaService {
         return token;
     }
 
-    private Tarefa getTarefaById(Long id){
-        return tarefaRepository.findById(id).orElseThrow(
+    private String getEmailUsuario(String token) {
+        return jwtUtil.extractUsername(getTokenFormatado(token));
+    }
+
+    private Tarefa getTarefaById(Long id, String email){
+        return tarefaRepository.findByIdAndEmailUsuario(id, email).orElseThrow(
                 () -> new ResourceNotFound("A tarefa não existe.")
         );
     }
 
     public TarefaDTO adicionarTarefa(TarefaDTO tarefaDTO, String token){
-        // Extrai o e-mail do usuário autenticado via token
-        String emailUsuario = jwtUtil.extractUsername(getTokenFormatado(token));
+        String emailUsuario = getEmailUsuario(token);
         Tarefa tarefaAdicionar = tarefaMapper.toTarefa(tarefaDTO);
+        tarefaAdicionar.setEmailUsuario(emailUsuario);
         return tarefaMapper.toTarefaDTO(tarefaRepository.save(tarefaAdicionar));
     }
 
     public List<TarefaDTO> buscarTarefasPorEmail(String token){
-        String email = jwtUtil.extractUsername(getTokenFormatado(token));
+        String email = getEmailUsuario(token);
         return tarefaMapper.toTarefasDTO(tarefaRepository.findByEmailUsuario(email));
     }
 
-    public List<TarefaDTO> buscarTarefasPorIntervaloDatas(LocalDateTime dataInicio, LocalDateTime dataFim){
-        return tarefaMapper.toTarefasDTO(tarefaRepository.buscarTarefasPorIntervaloDatas(dataInicio, dataFim));
+    public List<TarefaDTO> buscarTarefasPorIntervaloDatas(
+            LocalDateTime dataInicio, LocalDateTime dataFim, String token) {
+        String email = getEmailUsuario(token);
+        return tarefaMapper.toTarefasDTO(
+                tarefaRepository.findByEmailUsuarioAndDataEventoBetween(email, dataInicio, dataFim));
     }
 
-    public void deletarTarefa(Long id) {
-        tarefaRepository.delete(getTarefaById(id));
+    public void deletarTarefa(Long id, String token) {
+        tarefaRepository.delete(getTarefaById(id, getEmailUsuario(token)));
     }
 
-    public TarefaDTO alterarStatus(StatusNotificacaoEnum status, Long id){
-        Tarefa tarefa = getTarefaById(id);
+    public TarefaDTO alterarStatus(StatusNotificacaoEnum status, Long id, String token){
+        Tarefa tarefa = getTarefaById(id, getEmailUsuario(token));
         tarefa.setStatus(status);
         return tarefaMapper.toTarefaDTO(tarefaRepository.save(tarefa));
     }
 
-    public TarefaDTO atualizarDadosTarefa(TarefaDTO tarefaDTO, Long id){
-        Tarefa tarefa = getTarefaById(id);
+    public TarefaDTO atualizarDadosTarefa(TarefaDTO tarefaDTO, Long id, String token){
+        Tarefa tarefa = getTarefaById(id, getEmailUsuario(token));
         tarefaUpdateMapper.update(tarefaDTO, tarefa);
         return tarefaMapper.toTarefaDTO(tarefaRepository.save(tarefa));
     }
