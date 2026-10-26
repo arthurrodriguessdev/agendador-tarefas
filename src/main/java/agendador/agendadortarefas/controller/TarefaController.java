@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -17,13 +18,14 @@ import java.util.List;
 @RequestMapping("/tarefas")
 public class TarefaController {
     private final TarefaService tarefaService;
+    private final KafkaTemplate<String, TarefaDTO> kafkaTemplate;
 
     @PostMapping
     public ResponseEntity<TarefaDTO> adicionarTarefa(@RequestBody TarefaDTO tarefaDTO,
                                                      @RequestHeader("Authorization") String token){
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(tarefaService.adicionarTarefa(tarefaDTO, token));
+        TarefaDTO response = tarefaService.adicionarTarefa(tarefaDTO, token);
+        kafkaTemplate.send("tarefa-criada", response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping

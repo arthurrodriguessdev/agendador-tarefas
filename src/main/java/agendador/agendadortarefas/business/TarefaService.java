@@ -40,17 +40,7 @@ public class TarefaService {
     public TarefaDTO adicionarTarefa(TarefaDTO tarefaDTO, String token){
         // Extrai o e-mail do usuário autenticado via token
         String emailUsuario = jwtUtil.extractUsername(getTokenFormatado(token));
-        TarefaDTO tarefaDtoAdicionar = new TarefaDTO(
-                tarefaDTO.id(),
-                tarefaDTO.nomeTarefa(),
-                tarefaDTO.descricaoTarefa(),
-                LocalDateTime.now(),
-                tarefaDTO.dataEvento(),
-                emailUsuario,
-                StatusNotificacaoEnum.PENDENTE
-        );
-
-        Tarefa tarefaAdicionar = tarefaMapper.toTarefa(tarefaDtoAdicionar);
+        Tarefa tarefaAdicionar = tarefaMapper.toTarefa(tarefaDTO);
         return tarefaMapper.toTarefaDTO(tarefaRepository.save(tarefaAdicionar));
     }
 
