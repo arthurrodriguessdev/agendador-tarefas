@@ -2,15 +2,15 @@ spring:
   application:
     name: agendador-tarefas
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/db_agendador}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL_AGENDADOR:jdbc:postgresql://localhost:5432/db_agendador}
+    username: ${SPRING_DATASOURCE_USERNAME_AGENDADOR:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD_AGENDADOR:1801}
   jpa:
     hibernate:
       ddl-auto: ${JPA_DDL_AUTO:update}
     show-sql: ${JPA_SHOW_SQL:false}
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
 server:
   port: ${SERVER_PORT:8081}
 usuario:

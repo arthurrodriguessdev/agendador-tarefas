@@ -1,7 +1,7 @@
 package agendador.agendadortarefas.infraestructure.messaging.config;
 
 import agendador.agendadortarefas.business.dto.TarefaDTO;
-import agendador.agendadortarefas.infraestructure.messaging.TaskCreatedPublisher;
+import agendador.agendadortarefas.infraestructure.messaging.TaskPublisher;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -38,7 +38,15 @@ public class ProducerKafkaConfig {
 
     @Bean
     public NewTopic tarefaCriadaTopic(){
-        return TopicBuilder.name(TaskCreatedPublisher.TASK_CREATED_TOPIC)
+        return TopicBuilder.name(TaskPublisher.TASK_CREATED_TOPIC)
+                .partitions(1)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic nextTaskTopic(){
+        return TopicBuilder.name(TaskPublisher.NEXT_TASK_TOPIC)
                 .partitions(1)
                 .replicas(1)
                 .build();

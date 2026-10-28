@@ -3,7 +3,7 @@ package agendador.agendadortarefas.controller;
 import agendador.agendadortarefas.business.TarefaService;
 import agendador.agendadortarefas.business.dto.TarefaDTO;
 import agendador.agendadortarefas.infraestructure.enums.StatusNotificacaoEnum;
-import agendador.agendadortarefas.infraestructure.messaging.TaskCreatedPublisher;
+import agendador.agendadortarefas.infraestructure.messaging.TaskPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -18,13 +18,13 @@ import java.util.List;
 @RequestMapping("/tarefas")
 public class TarefaController {
     private final TarefaService tarefaService;
-    private final TaskCreatedPublisher taskCreatedPublisher;
+    private final TaskPublisher taskPublisher;
 
     @PostMapping
     public ResponseEntity<TarefaDTO> adicionarTarefa(@RequestBody TarefaDTO tarefaDTO,
                                                      @RequestHeader("Authorization") String token){
         TarefaDTO response = tarefaService.adicionarTarefa(tarefaDTO, token);
-        taskCreatedPublisher.publish(response);
+        taskPublisher.publisher(TaskPublisher.TASK_CREATED_TOPIC, response);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -66,5 +66,11 @@ public class TarefaController {
                                                            @RequestHeader("Authorization") String token){
         return ResponseEntity.status(HttpStatus.OK)
                 .body(tarefaService.alterarStatus(status, id, token));
+    }
+
+    @PostMapping("/proximas/notificar")
+    public ResponseEntity<Void> notificarProximasTarefas(@RequestHeader("Authorization") String token){
+        tarefaService.notificarProximasTarefas(token);
+        return ResponseEntity.ok().build();
     }
 }
