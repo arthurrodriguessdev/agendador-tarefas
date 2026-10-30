@@ -11,6 +11,9 @@ import java.util.Optional;
 public interface TarefaRepository extends JpaRepository<Tarefa, Long> {
     List<Tarefa> findByEmailUsuario(String email);
     List<Tarefa> findByEmailUsuarioAndDataEventoBetween(
-            String email, LocalDateTime dataInicio, LocalDateTime dataFim);
+            String email,
+            LocalDateTime dataInicio,
+            LocalDateTime dataFim
+    );
     Optional<Tarefa> findByIdAndEmailUsuario(Long id, String email);
 }

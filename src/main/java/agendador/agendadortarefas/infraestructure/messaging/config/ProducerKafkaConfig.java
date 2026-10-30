@@ -1,6 +1,5 @@
 package agendador.agendadortarefas.infraestructure.messaging.config;
 
-import agendador.agendadortarefas.business.dto.TarefaDTO;
 import agendador.agendadortarefas.infraestructure.messaging.TaskPublisher;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -23,7 +22,7 @@ public class ProducerKafkaConfig {
     private String serversConfig;
 
     @Bean
-    public ProducerFactory<String, TarefaDTO> producerFactory(){
+    public ProducerFactory<String, Object> producerFactory(){
         Map<String, Object> producerConfigs = new HashMap<>();
         producerConfigs.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, serversConfig);
         producerConfigs.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -32,7 +31,7 @@ public class ProducerKafkaConfig {
     }
 
     @Bean
-    public KafkaTemplate<String, TarefaDTO> kafkaTemplate() {
+    public KafkaTemplate<String, Object> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 
