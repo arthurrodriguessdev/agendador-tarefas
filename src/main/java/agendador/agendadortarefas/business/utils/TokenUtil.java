@@ -2,9 +2,10 @@ package agendador.agendadortarefas.business.utils;
 
 public class TokenUtil {
     /**
-     * Formata o token excluindo a parte inicial "Bearer"
+     * Remove o prefixo "Bearer " do token
      *
-     * @param token accessToken do usuário
+     * @param token token recebido no cabeçalho Authorization
+     * @return token sem o prefixo "Bearer "
      */
     public static String normalizarToken(String token){
         String prefixoExcluir = "Bearer ";

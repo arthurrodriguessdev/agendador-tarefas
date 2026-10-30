@@ -25,51 +25,100 @@ public class TarefaService {
     private final TaskPublisher taskPublisher;
     private final UsuarioService usuarioService;
 
-    private Tarefa getTarefaById(Long id, String email){
+    private Tarefa getTarefaById(Long id, String email) {
         return tarefaRepository.findByIdAndEmailUsuario(id, email).orElseThrow(
-                () -> new TarefaNotFound("Tarefa com id " + id + " não encontrada.")
+                () -> new TarefaNotFound("Tarefa com ID " + id + " não encontrada.")
         );
     }
 
-    public TarefaDTO adicionarTarefa(TarefaDTO tarefaDTO, String token){
+    /**
+     * Persiste uma tarefa para o usuário identificado pelo token e solicita a publicação do evento de criação.
+     *
+     * @param tarefaDTO dados da tarefa enviados pelo cliente
+     * @param token token bearer
+     * @return tarefa persistida
+     */
+    public TarefaDTO adicionarTarefa(TarefaDTO tarefaDTO, String token) {
         String emailUsuario = usuarioService.getEmailUsuario(token);
         Tarefa tarefaAdicionar = tarefaMapper.toTarefa(tarefaDTO);
         tarefaAdicionar.setEmailUsuario(emailUsuario);
-        return tarefaMapper.toTarefaDTO(tarefaRepository.save(tarefaAdicionar));
+        TarefaDTO tarefaCriada = tarefaMapper.toTarefaDTO(tarefaRepository.save(tarefaAdicionar));
+        taskPublisher.publisher(TaskPublisher.TASK_CREATED_TOPIC, tarefaCriada);
+        return tarefaCriada;
     }
 
-    public List<TarefaDTO> buscarTarefasPorEmail(String token){
+    /**
+     * Retorna todas as tarefas do usuário identificado pelo token.
+     *
+     * @param token token bearer
+     * @return tarefas do usuário ou uma lista vazia quando não houver tarefas
+     */
+    public List<TarefaDTO> buscarTarefasPorEmail(String token) {
         String email = usuarioService.getEmailUsuario(token);
         return tarefaMapper.toTarefasDTO(tarefaRepository.findByEmailUsuario(email));
     }
 
+    /**
+     * Retorna as tarefas do usuário autenticado dentro do período informado.
+     *
+     * @param dataInicio início inclusivo do período
+     * @param dataFim fim inclusivo do período
+     * @param token token bearer
+     * @return tarefas encontradas no período ou uma lista vazia
+     */
     public List<TarefaDTO> buscarTarefasPorIntervaloDatas(
             LocalDateTime dataInicio,
             LocalDateTime dataFim,
             String token
-    ){
+    ) {
         String email = usuarioService.getEmailUsuario(token);
         return tarefaMapper.toTarefasDTO(
-                tarefaRepository.findByEmailUsuarioAndDataEventoBetween(email, dataInicio, dataFim));
+                tarefaRepository.findByEmailUsuarioAndDataEventoBetween(email, dataInicio, dataFim)
+        );
     }
 
+    /**
+     * Exclui uma tarefa pertencente ao usuário identificado pelo token.
+     *
+     * @param id identificador da tarefa
+     * @param token token bearer
+     * @throws TarefaNotFound quando a tarefa não existe ou não pertence ao usuário
+     */
     public void deletarTarefa(Long id, String token) {
         tarefaRepository.delete(getTarefaById(id, usuarioService.getEmailUsuario(token)));
     }
 
-    public TarefaDTO alterarStatus(StatusNotificacaoEnum status, Long id, String token){
+    /**
+     * Altera o status de uma tarefa pertencente ao usuário autenticado.
+     *
+     * @param status novo status da notificação
+     * @param id identificador da tarefa
+     * @param token token bearer
+     * @return tarefa atualizada
+     * @throws TarefaNotFound quando a tarefa não existe ou não pertence ao usuário
+     */
+    public TarefaDTO alterarStatus(StatusNotificacaoEnum status, Long id, String token) {
         Tarefa tarefa = getTarefaById(id, usuarioService.getEmailUsuario(token));
         tarefa.setStatus(status);
         return tarefaMapper.toTarefaDTO(tarefaRepository.save(tarefa));
     }
 
-    public TarefaDTO atualizarDadosTarefa(TarefaDTO tarefaDTO, Long id, String token){
+    /**
+     * Atualiza os campos informados de uma tarefa pertencente ao usuário autenticado.
+     *
+     * @param tarefaDTO valores para atualização
+     * @param id identificador da tarefa
+     * @param token token bearer
+     * @return tarefa atualizada
+     * @throws TarefaNotFound quando a tarefa não existe ou não pertence ao usuário
+     */
+    public TarefaDTO atualizarDadosTarefa(TarefaDTO tarefaDTO, Long id, String token) {
         Tarefa tarefa = getTarefaById(id, usuarioService.getEmailUsuario(token));
         tarefaUpdateMapper.update(tarefaDTO, tarefa);
         return tarefaMapper.toTarefaDTO(tarefaRepository.save(tarefa));
     }
 
-    private List<TarefaDTO> getTarefasNotificar(String token){
+    private List<TarefaDTO> getTarefasNotificar(String token) {
         LocalDateTime horaAtual = LocalDateTime.now();
         LocalDateTime horaAtualMaisUma = horaAtual.plusHours(1);
         List<TarefaDTO> tarefasPeriodo = buscarTarefasPorIntervaloDatas(
@@ -83,15 +132,19 @@ public class TarefaService {
                 .toList();
     }
 
-    public void notificarProximasTarefas(String token){
+    /**
+     * Publica os eventos das tarefas pendentes previstas para a próxima hora
+     * para consumo pelo serviço notificador.
+     *
+     * @param token token bearer
+     */
+    public void notificarProximasTarefas(String token) {
         log.info("Iniciando processo de notificação das próximas tarefas");
         List<TarefaDTO> tarefasNotificar = getTarefasNotificar(token);
         log.info("Quantidade de tarefas a notificar: {}", tarefasNotificar.size());
 
-        tarefasNotificar.forEach(tarefa->{
+        tarefasNotificar.forEach(tarefa -> {
             taskPublisher.publisher(TaskPublisher.NEXT_TASK_TOPIC, tarefa);
-            // alterarStatus(StatusNotificacaoEnum.NOTIFICADO, tarefa.getId(), token);
-            // log.info("Notificação da tarefa {} enviada com sucesso", tarefa.getId());
         });
     }
 }
