@@ -1,8 +1,9 @@
 package agendador.agendadortarefas.business;
 
-import agendador.agendadortarefas.business.dto.TarefaDTO;
+import agendador.agendadortarefas.business.dto.tarefa.TarefaAdicionarDTO;
+import agendador.agendadortarefas.business.dto.tarefa.TarefaAtualizarDTO;
+import agendador.agendadortarefas.business.dto.tarefa.TarefaResponseDTO;
 import agendador.agendadortarefas.business.mapper.TarefaMapper;
-import agendador.agendadortarefas.business.mapper.TarefaUpdateMapper;
 import agendador.agendadortarefas.exception.TarefaNotFound;
 import agendador.agendadortarefas.infraestructure.entity.Tarefa;
 import agendador.agendadortarefas.infraestructure.enums.StatusNotificacaoEnum;
@@ -21,7 +22,6 @@ import java.util.List;
 public class TarefaService {
     private final TarefaRepository tarefaRepository;
     private final TarefaMapper tarefaMapper;
-    private final TarefaUpdateMapper tarefaUpdateMapper;
     private final TaskPublisher taskPublisher;
     private final UsuarioService usuarioService;
 
@@ -34,20 +34,20 @@ public class TarefaService {
     /**
      * Persiste uma tarefa para o usuário identificado pelo token e solicita a publicação do evento de criação.
      *
-     * @param tarefaDTO dados da tarefa enviados pelo cliente
+     * @param tarefaAdicionarDTO dados da tarefa enviados pelo cliente
      * @param token token bearer
      * @return tarefa persistida
      */
-    public TarefaDTO adicionarTarefa(TarefaDTO tarefaDTO, String token) {
+    public TarefaResponseDTO adicionarTarefa(TarefaAdicionarDTO tarefaAdicionarDTO, String token) {
         String emailUsuario = usuarioService.getEmailUsuario(token);
-        Tarefa tarefaAdicionar = tarefaMapper.toTarefa(tarefaDTO);
+        Tarefa tarefaAdicionar = tarefaMapper.toTarefa(tarefaAdicionarDTO);
 
         // Setando valores que não são passados por parâmetros
         tarefaAdicionar.setEmailUsuario(emailUsuario);
         tarefaAdicionar.setDataCriacao(LocalDateTime.now());
         tarefaAdicionar.setStatus(StatusNotificacaoEnum.PENDENTE);
 
-        TarefaDTO tarefaCriada = tarefaMapper.toTarefaDTO(tarefaRepository.save(tarefaAdicionar));
+        TarefaResponseDTO tarefaCriada = tarefaMapper.toTarefaResponseDTO(tarefaRepository.save(tarefaAdicionar));
         taskPublisher.publisher(TaskPublisher.TASK_CREATED_TOPIC, tarefaCriada);
         return tarefaCriada;
     }
@@ -58,9 +58,9 @@ public class TarefaService {
      * @param token token bearer
      * @return tarefas do usuário ou uma lista vazia quando não houver tarefas
      */
-    public List<TarefaDTO> buscarTarefasPorEmail(String token) {
+    public List<TarefaResponseDTO> buscarTarefasPorEmail(String token) {
         String email = usuarioService.getEmailUsuario(token);
-        return tarefaMapper.toTarefasDTO(tarefaRepository.findByEmailUsuario(email));
+        return tarefaMapper.toTarefasResponseDTO(tarefaRepository.findByEmailUsuario(email));
     }
 
     /**
@@ -71,13 +71,13 @@ public class TarefaService {
      * @param token token bearer
      * @return tarefas encontradas no período ou uma lista vazia
      */
-    public List<TarefaDTO> buscarTarefasPorIntervaloDatas(
+    public List<TarefaResponseDTO> buscarTarefasPorIntervaloDatas(
             LocalDateTime dataInicio,
             LocalDateTime dataFim,
             String token
     ) {
         String email = usuarioService.getEmailUsuario(token);
-        return tarefaMapper.toTarefasDTO(
+        return tarefaMapper.toTarefasResponseDTO(
                 tarefaRepository.findByEmailUsuarioAndDataEventoBetween(email, dataInicio, dataFim)
         );
     }
@@ -102,31 +102,44 @@ public class TarefaService {
      * @return tarefa atualizada
      * @throws TarefaNotFound quando a tarefa não existe ou não pertence ao usuário
      */
-    public TarefaDTO alterarStatus(StatusNotificacaoEnum status, Long id, String token) {
+    public TarefaResponseDTO alterarStatus(StatusNotificacaoEnum status, Long id, String token) {
         Tarefa tarefa = getTarefaById(id, usuarioService.getEmailUsuario(token));
         tarefa.setStatus(status);
-        return tarefaMapper.toTarefaDTO(tarefaRepository.save(tarefa));
+        return tarefaMapper.toTarefaResponseDTO(tarefaRepository.save(tarefa));
     }
 
     /**
      * Atualiza os campos informados de uma tarefa pertencente ao usuário autenticado.
      *
-     * @param tarefaDTO valores para atualização
+     * @param tarefaAtualizarDTO valores para atualização
      * @param id identificador da tarefa
      * @param token token bearer
      * @return tarefa atualizada
      * @throws TarefaNotFound quando a tarefa não existe ou não pertence ao usuário
      */
-    public TarefaDTO atualizarDadosTarefa(TarefaDTO tarefaDTO, Long id, String token) {
+    public TarefaResponseDTO atualizarDadosTarefa(TarefaAtualizarDTO tarefaAtualizarDTO, Long id, String token) {
         Tarefa tarefa = getTarefaById(id, usuarioService.getEmailUsuario(token));
-        tarefaUpdateMapper.update(tarefaDTO, tarefa);
-        return tarefaMapper.toTarefaDTO(tarefaRepository.save(tarefa));
+
+        // Atualizando os dados da tarefa
+        if(tarefaAtualizarDTO.nomeTarefa() != null && !tarefaAtualizarDTO.nomeTarefa().isBlank()){
+            tarefa.setNomeTarefa(tarefaAtualizarDTO.nomeTarefa());
+        }
+
+        if(tarefaAtualizarDTO.descricaoTarefa() != null && !tarefaAtualizarDTO.descricaoTarefa().isBlank()){
+            tarefa.setDescricaoTarefa(tarefaAtualizarDTO.descricaoTarefa());
+        }
+
+        if(tarefaAtualizarDTO.dataEvento() != null){
+            tarefa.setDataEvento(tarefaAtualizarDTO.dataEvento());
+        }
+
+        return tarefaMapper.toTarefaResponseDTO(tarefaRepository.save(tarefa));
     }
 
-    private List<TarefaDTO> getTarefasNotificar(String token) {
+    private List<TarefaResponseDTO> getTarefasNotificar(String token) {
         LocalDateTime horaAtual = LocalDateTime.now();
         LocalDateTime horaAtualMaisUma = horaAtual.plusHours(1);
-        List<TarefaDTO> tarefasPeriodo = buscarTarefasPorIntervaloDatas(
+        List<TarefaResponseDTO> tarefasPeriodo = buscarTarefasPorIntervaloDatas(
                 horaAtual,
                 horaAtualMaisUma,
                 token
@@ -145,7 +158,7 @@ public class TarefaService {
      */
     public void notificarProximasTarefas(String token) {
         log.info("Iniciando processo de notificação das próximas tarefas");
-        List<TarefaDTO> tarefasNotificar = getTarefasNotificar(token);
+        List<TarefaResponseDTO> tarefasNotificar = getTarefasNotificar(token);
         log.info("Quantidade de tarefas a notificar: {}", tarefasNotificar.size());
 
         tarefasNotificar.forEach(tarefa -> {

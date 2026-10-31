@@ -1,8 +1,11 @@
 package agendador.agendadortarefas.controller;
 
 import agendador.agendadortarefas.business.TarefaService;
-import agendador.agendadortarefas.business.dto.TarefaDTO;
+import agendador.agendadortarefas.business.dto.tarefa.TarefaAdicionarDTO;
+import agendador.agendadortarefas.business.dto.tarefa.TarefaAtualizarDTO;
+import agendador.agendadortarefas.business.dto.tarefa.TarefaResponseDTO;
 import agendador.agendadortarefas.infraestructure.enums.StatusNotificacaoEnum;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -14,23 +17,23 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/tarefas")
+@RequestMapping("/api/v1/tarefas")
 public class TarefaController {
     private final TarefaService tarefaService;
 
     /**
      * Cria uma tarefa para o usuário autenticado e solicita a publicação do evento de criação.
      *
-     * @param tarefaDTO dados da tarefa enviados pelo cliente
+     * @param tarefaAdicionarDTO dados da tarefa enviados pelo cliente
      * @param token token bearer do cabeçalho Authorization
      * @return a tarefa criada
      */
     @PostMapping
-    public ResponseEntity<TarefaDTO> adicionarTarefa(
-            @RequestBody TarefaDTO tarefaDTO,
+    public ResponseEntity<TarefaResponseDTO> adicionarTarefa(
+            @RequestBody @Valid TarefaAdicionarDTO tarefaAdicionarDTO,
             @RequestHeader("Authorization") String token
     ) {
-        TarefaDTO response = tarefaService.adicionarTarefa(tarefaDTO, token);
+        TarefaResponseDTO response = tarefaService.adicionarTarefa(tarefaAdicionarDTO, token);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -41,7 +44,7 @@ public class TarefaController {
      * @return tarefas do usuário
      */
     @GetMapping
-    public ResponseEntity<List<TarefaDTO>> buscarTarefasPorEmail(
+    public ResponseEntity<List<TarefaResponseDTO>> buscarTarefasPorEmail(
             @RequestHeader("Authorization") String token
     ) {
         return ResponseEntity.ok(tarefaService.buscarTarefasPorEmail(token));
@@ -56,7 +59,7 @@ public class TarefaController {
      * @return tarefas encontradas no período
      */
     @GetMapping("/eventos")
-    public ResponseEntity<List<TarefaDTO>> buscarTarefasPorIntervaloDatas(
+    public ResponseEntity<List<TarefaResponseDTO>> buscarTarefasPorIntervaloDatas(
             @RequestParam("dataInicio")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
             @RequestParam("dataFim")
@@ -87,18 +90,18 @@ public class TarefaController {
     /**
      * Atualiza os campos informados de uma tarefa pertencente ao usuário autenticado.
      *
-     * @param tarefaDTO valores para atualização
+     * @param tarefaAtualizarDTO valores para atualização
      * @param id identificador da tarefa
      * @param token token bearer do cabeçalho Authorization
      * @return tarefa atualizada
      */
     @PutMapping("/{id}")
-    public ResponseEntity<TarefaDTO> atualizarDadosTarefa(
-            @RequestBody TarefaDTO tarefaDTO,
+    public ResponseEntity<TarefaResponseDTO> atualizarDadosTarefa(
+            @RequestBody @Valid TarefaAtualizarDTO tarefaAtualizarDTO,
             @PathVariable Long id,
             @RequestHeader("Authorization") String token
     ) {
-        return ResponseEntity.ok(tarefaService.atualizarDadosTarefa(tarefaDTO, id, token));
+        return ResponseEntity.ok(tarefaService.atualizarDadosTarefa(tarefaAtualizarDTO, id, token));
     }
 
     /**
@@ -110,7 +113,7 @@ public class TarefaController {
      * @return tarefa atualizada
      */
     @PatchMapping("/{id}")
-    public ResponseEntity<TarefaDTO> atualizarStatusTarefa(
+    public ResponseEntity<TarefaResponseDTO> atualizarStatusTarefa(
             @RequestParam("status") StatusNotificacaoEnum status,
             @PathVariable Long id,
             @RequestHeader("Authorization") String token
