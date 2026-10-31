@@ -41,7 +41,12 @@ public class TarefaService {
     public TarefaDTO adicionarTarefa(TarefaDTO tarefaDTO, String token) {
         String emailUsuario = usuarioService.getEmailUsuario(token);
         Tarefa tarefaAdicionar = tarefaMapper.toTarefa(tarefaDTO);
+
+        // Setando valores que não são passados por parâmetros
         tarefaAdicionar.setEmailUsuario(emailUsuario);
+        tarefaAdicionar.setDataCriacao(LocalDateTime.now());
+        tarefaAdicionar.setStatus(StatusNotificacaoEnum.PENDENTE);
+
         TarefaDTO tarefaCriada = tarefaMapper.toTarefaDTO(tarefaRepository.save(tarefaAdicionar));
         taskPublisher.publisher(TaskPublisher.TASK_CREATED_TOPIC, tarefaCriada);
         return tarefaCriada;
